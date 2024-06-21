@@ -1,0 +1,14 @@
+# System constants
+HOSTNAME = '10.90.90.90'
+SNMP_VERSION = 1
+COMMUNITY_READ_NAME = 'public'
+COMMUNITY_WRITE_NAME = 'private'
+
+# MIB Variables
+IF_OPER_STATUS   = '.1.3.6.1.2.1.2.2.1.8'
+IF_ADMIN_STATUS  = '.1.3.6.1.2.1.2.2.1.7'
+DOT1DTP_FDB_PORT = '.1.3.6.1.2.1.17.4.3.1.2'
+
+# Others
+PORT_UP = 1
+PORT_DOWN = 2
