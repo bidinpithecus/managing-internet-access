@@ -1,0 +1,9 @@
+'''
+-> discover teacher computer mac ---> OK!
+-> snmpwalk -v1 -c public 10.90.90.90 .1.3.6.1.2.1.17.4.3.1.1 | grep mac
+    .1.3.6.1.2.1.17.4.3.1.1.108.60.140.70.132.108 = Hex-STRING: 6C 3C 8C 46 84 6C ---> NOT NECESSARY ---> Already converting it to decimal
+-> after, .1.3.6.1.2.1.17.4.3.1.1. in OID is the decimal representation of mac, i.e. 108.60.140.70.132.108
+-> to get the switch port number: snmpget host .1.3.6.1.2.1.17.4.3.1.2.++decimal_mac
+
+-> to guess the link port, perform a walk in OID: .1.3.6.1.2.1.17.4.3.1.2, and set it to the maximum occurrence port.
+'''

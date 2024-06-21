@@ -1,0 +1,13 @@
+services:
+  postgresdb:
+    image: postgres:alpine3.20
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: snmp_manager
+      DATABASE_URL: postgresql://admin:admin@localhost:5432/snmp_manager
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+

@@ -1,2 +1,4 @@
 easysnmp
 getmac
+flask_sqlalchemy
+python-crontab
