@@ -48,3 +48,16 @@ def schedule():
     # Schedule block/unblock ports
 
     return redirect(url_for('dashboard'))
+
+# @app.route('/switch', methods=['GET', 'POST'])
+# def switch():
+#     if request.method == 'POST':
+#         mac = request.form['mac']
+#         ip = request.form['ip']
+#         snmp_version = request.form['snmp_version']
+#         num_of_ports = request.form['num_of_ports']
+
+#         # Add a new switch in the database
+
+#     if request.method == 'GET':
+#         mac = request.form['mac']
