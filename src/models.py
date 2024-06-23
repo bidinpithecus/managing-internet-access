@@ -1,4 +1,5 @@
 from app import db
+from werkzeug.security import generate_password_hash, check_password_hash
 
 class Admin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -7,7 +8,10 @@ class Admin(db.Model):
 
     def __init__(self, user, password):
         self.user = user
-        self.password = password
+        self.password = generate_password_hash(password)
+
+    def verify_password(self, password: str) -> bool:
+        return check_password_hash(self.password, password)
 
     def to_dict(self):
         return {

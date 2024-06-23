@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, jsonify
+from flask import render_template, request, redirect, url_for, jsonify, flash
 from models import *
 from app import create_app, db
 from sqlalchemy import text
@@ -20,13 +20,48 @@ def healthcheck():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        data = request.get_json()
+        user = data.get('user')
+        password = data.get('password')
 
-        # Auth
+        if not all([user, password]):
+            return jsonify({"message": "Missing data"}), 400
 
-        return redirect(url_for('dashboard'))
+        user = Admin.query.filter_by(user=user).first()
+        if user and user.verify_password(password):
+            message = 'Logged in successfully'
+            flash(message)
+            return jsonify({"message": message}), 200
+        else:
+            message = 'Invalid username or password'
+            flash(message)
+            return jsonify({"message": message}), 401
     return render_template('login.html')
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        data = request.get_json()
+        user = data.get('user')
+        password = data.get('password')
+
+        if not all([user, password]):
+            return jsonify({"message": "Missing data"}), 400
+
+        existing_user = Admin.query.filter_by(user=user).first()
+        if existing_user:
+            message = 'Username already taken'
+            flash(message)
+            return jsonify({"message": message}), 401
+
+        new_user = Admin(user=user, password=password)
+        db.session.add(new_user)
+        db.session.commit()
+
+        message = 'Signup successful. Please log in'
+        flash(message)
+        return jsonify({"message": message}), 200
+    return render_template('signup.html')
 
 @app.route('/dashboard')
 def dashboard():
