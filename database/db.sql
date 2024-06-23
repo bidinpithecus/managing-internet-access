@@ -8,8 +8,10 @@ CREATE TABLE "admin" (
 
 CREATE TABLE "switch" (
     "id" SERIAL PRIMARY KEY,
-    "mac" VARCHAR(255) NOT NULL,
-    "ip" VARCHAR(255) NOT NULL,
+    "mac" VARCHAR(255) UNIQUE NOT NULL,
+    "ip" VARCHAR(255) UNIQUE NOT NULL,
+    "read_community" VARCHAR(255) NOT NULL,
+    "write_community" VARCHAR(255) NOT NULL,
     "snmp_version" INT NOT NULL,
     "num_of_ports" INT NOT NULL
 );
