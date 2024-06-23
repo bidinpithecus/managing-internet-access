@@ -17,16 +17,6 @@ def healthcheck():
     except Exception as e:
         return jsonify({"status": "unhealthy", "reason": str(e)}), 500
 
-@app.route('/mara', methods=['GET'])
-def test():
-    try:
-        admins = Admin.query.all()
-        result_list = [admin.to_dict() for admin in admins]
-
-        return jsonify(result_list), 200
-    except Exception as e:
-        return jsonify({"status": "unhealthy", "reason": str(e)}), 500
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
