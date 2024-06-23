@@ -101,3 +101,40 @@ def switch():
             return jsonify(result_list), 200
 
     return jsonify({"message": "Method not allowed"}), 405
+
+@app.route('/classroom', methods=['GET', 'POST'])
+def classroom():
+    if request.method == 'POST':
+        data = request.get_json()
+        name = data.get('name')
+        size = data.get('size')
+
+        if not all([name, size]):
+            return jsonify({"message": "Missing data"}), 400
+
+        existing_room = Classroom.query.filter_by(name=name).first()
+        if existing_room:
+            return jsonify({"message": "Classroom already exists"}), 400
+
+        new_classroom = Classroom(name=name, size=size)
+        db.session.add(new_classroom)
+        db.session.commit()
+
+        return jsonify({"message": "Classroom added successfully!"}), 201
+
+    elif request.method == 'GET':
+        classroom_name = request.args.get('name')
+
+        if classroom_name:
+            classroom = Classroom.query.filter_by(name=classroom_name).first()
+            if classroom:
+                result = classroom.to_dict()
+                return jsonify(result), 200
+            else:
+                return jsonify({"message": "Classroom not found"}), 404
+        else:
+            classrooms = Classroom.query.all()
+            result_list = [classroom.to_dict() for classroom in classrooms]
+            return jsonify(result_list), 200
+
+    return jsonify({"message": "Method not allowed"}), 405
