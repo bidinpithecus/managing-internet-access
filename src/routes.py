@@ -69,7 +69,6 @@ def dashboard():
 
 @app.route('/schedule', methods=['POST'])
 def schedule():
-
     # Schedule block/unblock ports
 
     return redirect(url_for('dashboard'))
@@ -160,6 +159,89 @@ def classroom():
         else:
             classrooms = Classroom.query.all()
             result_list = [classroom.to_dict() for classroom in classrooms]
+            return jsonify(result_list), 200
+
+    return jsonify({"message": "Method not allowed"}), 405
+
+@app.route('/porttype', methods=['GET', 'POST'])
+def porttype():
+    if request.method == 'POST':
+        data = request.get_json()
+        description = data.get('description')
+
+        if not description:
+            return jsonify({"message": "Missing data"}), 400
+
+        existing_type = PortType.query.filter_by(description=description).first()
+        if existing_type:
+            return jsonify({"message": "Port type already exists"}), 400
+
+        new_porttype = PortType(description=description)
+        db.session.add(new_porttype)
+        db.session.commit()
+
+        return jsonify({"message": "Port type added successfully!"}), 201
+
+    elif request.method == 'GET':
+        description = request.args.get('description')
+
+        if description:
+            porttype = PortType.query.filter_by(description=description).first()
+            if porttype:
+                result = porttype.to_dict()
+                return jsonify(result), 200
+            else:
+                return jsonify({"message": "Port type not found"}), 404
+        else:
+            porttypes = PortType.query.all()
+            result_list = [porttype.to_dict() for porttype in porttypes]
+            return jsonify(result_list), 200
+
+    return jsonify({"message": "Method not allowed"}), 405
+
+@app.route('/port', methods=['GET', 'POST'])
+def port():
+    if request.method == 'POST':
+        data = request.get_json()
+        number = data.get('number')
+        switch_id = data.get('switch_id')
+        classroom_id = data.get('classroom_id')
+        type_id = data.get('type_id')
+
+        if not all([number, switch_id, classroom_id, type_id]):
+            return jsonify({"message": "Missing data"}), 400
+
+        switch = Switch.query.get(switch_id)
+        if not switch:
+            return jsonify({"message": "Switch not found"}), 404
+
+        classroom = Classroom.query.get(classroom_id)
+        if not classroom:
+            return jsonify({"message": "Classroom not found"}), 404
+
+        port_type = PortType.query.get(type_id)
+        if not port_type:
+            return jsonify({"message": "Port type not found"}), 404
+
+        new_port = Port(number=number, switch_id=switch_id, classroom_id=classroom_id, type_id=type_id)
+        db.session.add(new_port)
+        db.session.commit()
+
+        return jsonify({"message": "Port added successfully!"}), 201
+
+    elif request.method == 'GET':
+        port_id = request.args.get('id')
+
+        if port_id:
+            port = Port.query.get(port_id)
+            if port:
+                result = port.to_dict()
+                return jsonify(result), 200
+            else:
+                return jsonify({"message": "Port not found"}), 404
+        else:
+            ports = Port.query.all()
+            result_list = [port.to_dict() for port in ports]
             return jsonify(result_list), 200
 
     return jsonify({"message": "Method not allowed"}), 405

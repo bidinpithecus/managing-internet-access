@@ -28,7 +28,7 @@ class Switch(db.Model):
     write_community = db.Column(db.String(255), nullable=False)
     snmp_version = db.Column(db.Integer, nullable=False)
     num_of_ports = db.Column(db.Integer, nullable=False)
-    ports = db.relationship('Port', backref='switch', lazy=True, foreign_keys='Port.switch_mac')
+    ports = db.relationship('Port', backref='switch', lazy=True, foreign_keys='Port.switch_id')
 
     def __init__(self, mac, ip, read_community, write_community, snmp_version, num_of_ports):
         self.mac = mac
@@ -68,14 +68,14 @@ class Classroom(db.Model):
 class Port(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     number = db.Column(db.Integer, nullable=False)
-    switch_mac = db.Column(db.String(255), db.ForeignKey('switch.mac'))
+    switch_id = db.Column(db.String(255), db.ForeignKey('switch.id'))
     classroom_id = db.Column(db.Integer, db.ForeignKey('classroom.id'))
     type_id = db.Column(db.Integer, db.ForeignKey('port_type.id'))
     schedules = db.relationship('Scheduling', backref='port', lazy=True)
 
-    def __init__(self, number, switch_mac, classroom_id, type_id):
+    def __init__(self, number, switch_id, classroom_id, type_id):
         self.number = number
-        self.switch_mac = switch_mac
+        self.switch_id = switch_id
         self.classroom_id = classroom_id
         self.type_id = type_id
 
@@ -83,7 +83,7 @@ class Port(db.Model):
         return {
             'id': self.id,
             'number': self.number,
-            'switch_mac': self.switch_mac,
+            'switch_id': self.switch_id,
             'classroom_id': self.classroom_id,
             'type_id': self.type_id
         }
