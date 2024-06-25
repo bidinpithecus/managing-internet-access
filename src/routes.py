@@ -1,7 +1,9 @@
 from flask import render_template, request, redirect, url_for, jsonify, flash
+from sqlalchemy import text
+
+from snmp.snmp_manager import SNMPManager
 from models import *
 from app import create_app, db
-from sqlalchemy import text
 
 app = create_app()
 
@@ -243,5 +245,60 @@ def port():
             ports = Port.query.all()
             result_list = [port.to_dict() for port in ports]
             return jsonify(result_list), 200
+
+    return jsonify({"message": "Method not allowed"}), 405
+
+@app.route('/port-status', methods=['GET', 'POST'])
+def port_status():
+    if request.method == 'POST':
+        data = request.get_json()
+        port_id = data.get('port_id')
+        status_code = data.get('status_code')
+
+        if not all([port_id, status_code]):
+            return jsonify({"message": "Missing data"}), 400
+
+        port = Port.query.get(port_id)
+        if not port:
+            return jsonify({"message": "Port not found"}), 404
+
+        description = "Aluno"
+        port_type = PortType.query.filter_by(description=description).first()
+
+        if not port_type:
+            return jsonify({"message": description + " not added to the port_type table"}), 404
+
+        if port.type_id != port_type.id:
+            return jsonify({"message": "Port not allowed"}), 401
+
+        switch = Switch.query.get(port.switch_id)
+        if not switch:
+            return jsonify({"message": "Switch not found"}), 404
+
+        snmp_manager = SNMPManager(switch.hostname, switch.community_read, switch.community_write, switch.version)
+        ret = snmp_manager.change_port_status(port.number, status_code)
+
+        if ret:
+            return jsonify({"message": "Port status changed successfully"}), 201
+        else:
+            return jsonify({"message": "Port status unchanged"}), 500
+
+    if request.method == 'GET':
+        switch_id = request.args.get('switch_id')
+        if not switch_id:
+            return jsonify({"message": "Missing switch_id"}), 400
+
+        switch = Switch.query.get(switch_id)
+        if not switch:
+            return jsonify({"message": "Switch not found"}), 404
+
+        ports = Port.query.filter_by(switch_id=switch_id).all()
+        if not ports:
+            return jsonify({"message": "Switch has no ports"}), 404
+
+        snmp_manager = SNMPManager(switch.hostname, switch.community_read, switch.community_write, switch.version)
+        ret = snmp_manager.get_port_status()
+
+        return jsonify(ret), 200
 
     return jsonify({"message": "Method not allowed"}), 405
