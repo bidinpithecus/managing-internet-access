@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='styleNewClassroom.css')}}">
+    <script>
+        async function getClassrooms() {
+            const url = "http://127.0.0.1:5000/api/classroom";
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+
+                const json = await response.json();
+                return json;
+            } catch (error) {
+                console.error(error.message);
+
+                return [];
+            }
+        }
+
+        async function populateSelect() {
+            const classrooms = await getClassrooms();
+            const selectElement = document.getElementById('classroom_id');
+
+            classrooms.forEach(classroom => {
+                const option = document.createElement('option');
+                option.value = classroom.id;
+                option.text = classroom.name;
+                selectElement.appendChild(option);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", populateSelect);
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const switchForm = document.querySelector(".new-switch-form");
+
+            let switchRegistered = false;
+
+            function checkRedirect() {
+                if (switchRegistered) {
+                    window.location.href = "http://127.0.0.1:5000/ports";
+                }
+            }
+
+            switchForm.addEventListener("submit", function(event) {
+                event.preventDefault();
+                const formData = new FormData(switchForm);
+                fetch(switchForm.action, {
+                    method: "POST",
+                    body: formData,
+                })
+                .then(response => {
+                    if (response.status === 201) {
+                        switchRegistered = true;
+                        switchForm.querySelector(".new-switch-button").disabled = true;
+                        switchForm.querySelector(".new-switch-button").style.pointerEvents = "none";
+                        switchForm.querySelector(".new-switch-button").textContent = "Cadastrado";
+                        checkRedirect();
+                    } else {
+                        alert("Erro ao cadastrar switch");
+                    }
+                })
+                .catch(error => console.error("Erro:", error));
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="new-switch-container">
+        <p>Cadastro de Switch</p>
+        <form class="new-switch-form" action="http://127.0.0.1:5000/api/switch" method="post">
+            <select id="classroom_id" name="classroom_id" class="new-classroom-input" required>
+                <option value="" disabled selected>Sala de aula</option>
+            </select>
+            <input type="text" id="mac" name="mac" placeholder="Endereço mac" class="new-switch-input" required>
+            <input type="text" id="ip" name="ip" placeholder="Endereço ip" class="new-switch-input" required>
+            <input type="text" id="read_community" name="read_community" placeholder="Comunidade de leitura" class="new-switch-input" required>
+            <input type="text" id="write_community" name="write_community" placeholder="Comunidade de escrita" class="new-switch-input" required>
+            <input type="number" id="snmp_version" name="snmp_version" placeholder="Versão SNMP" class="new-switch-input" required>
+            <input type="number" id="num_of_ports" name="num_of_ports" placeholder="Número de portas" class="new-switch-input" required>
+            <button type="submit" class="new-switch-button">Cadastrar</button>
+        </form>
+    </div>
+</body>
+</html>

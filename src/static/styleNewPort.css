@@ -1,0 +1,69 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.new-switch-button:disabled {
+    background-color: #3f8bee;
+}
+
+.new-switch-container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 300px;
+}
+
+.new-switch-div {
+    width: 300px;
+}
+
+.new-switch-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.new-switch-input {
+    box-sizing: border-box;
+    width: calc(100%);
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.new-switch-button {
+    background-color: #1877f2;
+    width: calc(100%);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.new-switch-button:hover {
+    background-color: #165fc1;
+}
+
+.port-select-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.port-select-container label {
+    flex: 1;
+    margin-right: 10px;
+}
+.port-select-container select {
+    flex: 2;
+}

@@ -106,6 +106,10 @@ def schedule():
 
     return jsonify({"message": "Method not allowed"}), 405
 
+@app.route('/switch')
+def show_switch():
+    return render_template('new-switch.html')
+
 @app.route('/api/switch', methods=['GET', 'POST'])
 def switch():
     if request.method == 'POST':
@@ -118,9 +122,9 @@ def switch():
         snmp_version = data.get('snmp_version')
         num_of_ports = data.get('num_of_ports')
 
-        classroom_name = data.get('classroom_name')
+        classroom_id = data.get('classroom_id')
 
-        if not all([mac, ip, read_community, write_community, snmp_version, num_of_ports, classroom_name]):
+        if not all([mac, ip, read_community, write_community, snmp_version, num_of_ports, classroom_id]):
             return jsonify({"message": "Missing data"}), 400
 
         existing_mac = Switch.query.filter_by(mac=mac).first()
@@ -130,6 +134,10 @@ def switch():
         existing_ip = Switch.query.filter_by(ip=ip).first()
         if existing_ip:
             return jsonify({"message": "IP address already exists"}), 400
+
+        classroom: Classroom | None = Classroom.query.filter_by(id=classroom_id).first()
+        if not classroom:
+            return jsonify({"message": "Classroom not found"}), 400
 
         new_switch = Switch(
             mac=mac,
@@ -142,13 +150,15 @@ def switch():
         db.session.add(new_switch)
         db.session.commit()
 
-        classroom = Classroom.query.filter_by(name=classroom_name).first()
+        student_type = PortType.query.filter_by(description="Aluno").first()
+        if not student_type:
+            return jsonify({"message": "Tipo aluno não adicionado na tabela de tipos de porta"}), 400
 
         for port_number in range(1, int(num_of_ports) + 1):
             new_port = Port(
                 switch_id=new_switch.id,
                 number=port_number,
-                type_id=1,
+                type_id=student_type.id,
                 classroom_id=classroom.id
             )
             db.session.add(new_port)
@@ -172,7 +182,7 @@ def switch():
 
     return jsonify({"message": "Method not allowed"}), 405
 
-@app.route('/api/classroom')
+@app.route('/classroom')
 def show_classroom():
     return render_template('new-classroom.html')
 
@@ -214,24 +224,68 @@ def classroom():
 
 @app.route('/api/multiple-ports', methods=['POST'])
 def handle_ports():
-    action = request.form.get('action')
+    data = request.get_json()
 
-    if action == 'register':
-        professor_port = request.form.get('professor_port')
-        switch_port = request.form.get('switch_port')
-        backend_port = request.form.get('backend_port')
-        other_rooms_ports = request.form.get('other_rooms_port').split(',')
+    professor_port = data.get('professor_port')
+    switch_port = data.get('switch_port')
+    backend_port = data.get('backend_port')
+    other_rooms_ports = data.get('other_rooms_ports', [])
 
-        return jsonify({
-            'message': 'Ports registered successfully',
-            'professor_port': professor_port,
-            'switch_port': switch_port,
-            'backend_port': backend_port,
-            'other_rooms_ports': other_rooms_ports
-        }), 200
+    if professor_port and int(professor_port):
+        professor_port = int(professor_port)
 
-    # Handle other actions if needed
-    return jsonify({'error': 'Invalid action'}), 400
+    professor_type = PortType.query.filter_by(description="Professor").first()
+    if not professor_type:
+        return jsonify({"message": "Tipo professor não adicionado na tabela de tipos de porta"}), 400
+
+    port = Port.query.get(professor_port)
+    if port:
+        port.type_id = professor_type.id
+        db.session.commit()
+
+    if switch_port and int(switch_port):
+        switch_port = int(switch_port)
+
+    switch_type = PortType.query.filter_by(description="Switch").first()
+    if not switch_type:
+        return jsonify({"message": "Tipo switch não adicionado na tabela de tipos de porta"}), 400
+
+    port = Port.query.get(switch_port)
+    if port:
+        port.type_id = switch_type.id
+        db.session.commit()
+
+    if backend_port and int(backend_port):
+        backend_port = int(backend_port)
+
+    backend_type = PortType.query.filter_by(description="Backend").first()
+    if not backend_type:
+        return jsonify({"message": "Tipo backend não adicionado na tabela de tipos de porta"}), 400
+
+    port = Port.query.get(backend_port)
+    if port:
+        port.type_id = backend_type.id
+        db.session.commit()
+
+    other_classrooms_ports = []
+
+    for item in other_rooms_ports:
+        port_id = int(item.get('port_id'))
+        classroom_id = int(item.get('classroom_id'))
+
+        port = Port.query.get(port_id)
+        if port:
+            port.classroom_id = classroom_id
+            db.session.commit()
+            other_classrooms_ports.append({'port_id': port_id, 'classroom_id': classroom_id})
+
+    return jsonify({
+        'message': 'Ports registered successfully',
+        'professor_port': professor_port,
+        'switch_port': switch_port,
+        'backend_port': backend_port,
+        'other_rooms_ports': other_classrooms_ports
+    }), 201
 
 @app.route('/api/porttype', methods=['GET', 'POST'])
 def porttype():
@@ -269,9 +323,9 @@ def porttype():
 
     return jsonify({"message": "Method not allowed"}), 405
 
-@app.route('/set-ports-switch')
+@app.route('/ports')
 def show_ports():
-    return render_template('set-ports-switch.html')
+    return render_template('new-ports.html')
 
 @app.route('/api/port', methods=['GET', 'POST'])
 def port():
@@ -308,6 +362,25 @@ def port():
 
         if port_id:
             port = Port.query.get(port_id)
+            if port:
+                result = port.to_dict()
+                return jsonify(result), 200
+            else:
+                return jsonify({"message": "Port not found"}), 404
+        else:
+            ports = Port.query.all()
+            result_list = [port.to_dict() for port in ports]
+            return jsonify(result_list), 200
+
+    return jsonify({"message": "Method not allowed"}), 405
+
+@app.route('/api/first-port-for-switch', methods=['GET', 'POST'])
+def first_port():
+    if request.method == 'GET':
+        switch_id = request.args.get('id')
+
+        if switch_id:
+            port = Port.query.filter_by(switch_id=switch_id).order_by(Port.number).first()
             if port:
                 result = port.to_dict()
                 return jsonify(result), 200
