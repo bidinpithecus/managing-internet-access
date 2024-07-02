@@ -69,8 +69,36 @@ def signup():
         return redirect(url_for('show_login'))
     return render_template('signup.html')
 
-@app.route('/api/dashboard')
+@app.route('/api/dashboard', methods=['GET', 'POST'])
 def dashboard():
+    if request.method == 'POST':
+        data = request.form
+
+        classroom_id = data.get('classroom_id')
+
+        if not all([classroom_id]):
+            return jsonify({"message": "Missing data"}), 400
+
+        classroom: Classroom | None = Classroom.query.filter_by(id=classroom_id).first()
+        if not classroom:
+            return jsonify({"message": "Classroom not found"}), 400
+
+        ports = Port.query.filter_by(classroom_id=classroom_id).order_by(Port.id)
+
+        switch = Switch.query.filter_by(id=ports[0].switch_id).first()
+
+        snmpManager = SNMPManager(switch.ip, switch.read_community, switch.write_community, switch.snmp_version)
+
+        result_list = []
+        for port in ports:
+            port_with_status = port.to_dict()
+            status = snmpManager.get_port_status(port.number)
+            port_with_status['status'] = status.value
+            result_list.append(port_with_status)
+        return jsonify(result_list), 200
+
+@app.route('/dashboard')
+def show_dashboard():
     return render_template('dashboard.html')
 
 @app.route('/api/schedule', methods=['GET', 'POST'])

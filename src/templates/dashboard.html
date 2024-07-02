@@ -4,19 +4,134 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Controle</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
 </head>
 <body class="dashboard-body">
-    <header class="dashboard-header">
-        <div class="header-container">
-            <h1 class="header-title">Painel de Controle</h1>
-        </div>
-    </header>
     <content>
         <div class="main-container">
+            <div class="new-switch-container">
+                <form class="new-switch-form" action="http://127.0.0.1:5000/api/dashboard" method="post">
+                    <select id="classroom_id" name="classroom_id" class="new-classroom-input" required>
+                        <option value="" disabled selected>Sala de aula</option>
+                    </select>
+                    <button type="submit" class="new-switch-button">Selecionar</button>
+                </form>
+            </div>
             <div class="grid-container" id="pc-containers"></div>
         </div>
     </content>
-    <script src="script.js"></script>
+    <script>
+        async function getClassrooms() {
+            const url = "http://127.0.0.1:5000/api/classroom";
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+
+                const json = await response.json();
+                return json;
+            } catch (error) {
+                console.error(error.message);
+                return [];
+            }
+        }
+
+        async function populateSelect() {
+            const classrooms = await getClassrooms();
+            const selectElement = document.getElementById('classroom_id');
+
+            classrooms.forEach(classroom => {
+                const option = document.createElement('option');
+                option.value = classroom.id;
+                option.text = classroom.name;
+                selectElement.appendChild(option);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", populateSelect);
+
+        function createPCContainer(pc) {
+            // Cria o contêiner principal
+            const container = document.createElement('div');
+            container.className = 'pc-container';
+
+            // Cria o contêiner de status
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'dashboard-status';
+
+            const idP = document.createElement('p');
+            idP.textContent = `Porta ${pc.number}`;
+
+            const statusP = document.createElement('p');
+            let status;
+            if (pc.status == 1) {
+                status = "Aberta";
+            } else if (pc.status == 2) {
+                status = "Fechada";
+            }
+            statusP.textContent = `Status: ${status}`;
+
+            statusDiv.appendChild(idP);
+            statusDiv.appendChild(statusP);
+
+            // Cria o contêiner dos botões
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'pc-btn-container';
+
+            const button1 = document.createElement('button');
+            button1.className = 'pc-button';
+            button1.textContent = 'Agendar bloqueio';
+
+            const button2 = document.createElement('button');
+            button2.className = 'pc-button';
+            button2.textContent = 'Desbloquear';
+
+            buttonContainer.appendChild(button1);
+            buttonContainer.appendChild(button2);
+
+            // Junta tudo no contêiner principal
+            container.appendChild(statusDiv);
+            container.appendChild(buttonContainer);
+
+            return container;
+        }
+
+        function addPCContainersToDocument(pcs, containerElement) {
+            pcs.forEach(pc => {
+                const pcContainer = createPCContainer(pc);
+                containerElement.appendChild(pcContainer);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const switchForm = document.querySelector(".new-switch-form");
+
+            switchForm.addEventListener("submit", function(event) {
+                event.preventDefault();
+                const formData = new FormData(switchForm);
+                fetch(switchForm.action, {
+                    method: "POST",
+                    body: formData,
+                })
+                .then(response => {
+                    if (response.status === 200) {
+                        return response.json();
+                    } else {
+                        alert("Erro ao selecionar sala");
+                    }
+                })
+                .then(ports => {
+                    if (ports) {
+                        console.log(ports);
+                        const containerElement = document.getElementById('pc-containers');
+                        containerElement.innerHTML = '';
+                        addPCContainersToDocument(ports, containerElement);
+                    }
+                })
+                .catch(error => console.error("Erro:", error));
+            });
+        });
+    </script>
 </body>
 </html>

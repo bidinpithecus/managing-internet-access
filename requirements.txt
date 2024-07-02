@@ -2,5 +2,6 @@ easysnmp
 flask
 getmac
 flask_sqlalchemy
+flask_cors
 python-crontab
 psycopg2

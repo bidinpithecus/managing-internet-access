@@ -3,26 +3,21 @@ function createPCContainer(pc) {
     const container = document.createElement('div');
     container.className = 'pc-container';
 
-    // Cria o contêiner do ícone
-    const iconDiv = document.createElement('div');
-    iconDiv.className = 'icon';
-
-    const img = document.createElement('img');
-    img.src = 'pc-icon.png';
-    img.alt = 'PC Icon';
-    img.className = 'pc-icon';
-
-    iconDiv.appendChild(img);
-
     // Cria o contêiner de status
     const statusDiv = document.createElement('div');
     statusDiv.className = 'dashboard-status';
 
     const idP = document.createElement('p');
-    idP.textContent = `Id: ${pc.id}`;
+    idP.textContent = `Número: ${pc.number}`;
 
     const statusP = document.createElement('p');
-    statusP.textContent = `Status: ${pc.status}`;
+    let status;
+    if (pc.status == 1) {
+        status = "Aberta";
+    } else if (pc.status == 2) {
+        status = "Fechada";
+    }
+    statusP.textContent = `Status: ${status}`;
 
     statusDiv.appendChild(idP);
     statusDiv.appendChild(statusP);
@@ -50,6 +45,40 @@ function createPCContainer(pc) {
     return container;
 }
 
+function addPCContainersToDocument(pcs, containerElement) {
+    pcs.forEach(pc => {
+        const pcContainer = createPCContainer(pc);
+        containerElement.appendChild(pcContainer);
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const switchForm = document.querySelector(".new-switch-form");
+
+    switchForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+        const formData = new FormData(switchForm);
+        fetch(switchForm.action, {
+            method: "POST",
+            body: formData,
+        })
+        .then(response => {
+            if (response.status === 200) {
+                return response.json();
+            } else {
+                alert("Erro ao selecionar sala");
+            }
+        })
+        .then(ports => {
+            if (ports) {
+                const containerElement = document.getElementById('pc-containers');
+                addPCContainersToDocument(ports, containerElement);
+            }
+        })
+        .catch(error => console.error("Erro:", error));
+    });
+});
+
 // function addPCContainersToDocument(pcs, containerElement) {
 //     pcs.forEach(pc => {
 //         const pcContainer = createPCContainer(pc);
@@ -62,8 +91,8 @@ function createPCContainer(pc) {
 //     status: k % 2 === 0 ? 'Online' : 'Offline'
 // }));
 
-// const containerElement = document.getElementById('pc-containers');
-// addPCContainersToDocument(pcs, containerElement);
+const containerElement = document.getElementById('pc-containers');
+addPCContainersToDocument(pcs, containerElement);
 
 document.addEventListener('DOMContentLoaded', () => {
     const gridItems = document.querySelectorAll('.grid-item');
