@@ -14,11 +14,11 @@ class SNMPManager:
             occupied_status = self.reader_session.get(IF_OPER_STATUS + '.' + str(port_number)).value
             open_status = self.reader_session.get(IF_ADMIN_STATUS + '.' + str(port_number)).value
             return [{'occupied_status': occupied_status, 'open_status': open_status}]
-        
+
         ports_status = []
         occupied_status_of_all = self.reader_session.walk(IF_OPER_STATUS)
         open_status_for_all = self.reader_session.walk(IF_ADMIN_STATUS)
-        
+
         for (occupied_status, open_status) in enumerate(zip(occupied_status_of_all, open_status_for_all), start=1):
             ports_status.append({
                 'occupied_status': occupied_status.value,
@@ -26,7 +26,7 @@ class SNMPManager:
             })
 
         return ports_status
-    
+
     def change_port_status(self, port_number: int, value: PortStatus) -> bool:
         return self.writer_session.set(IF_ADMIN_STATUS + '.' + str(port_number), value, 'i')
 
@@ -34,3 +34,9 @@ class SNMPManager:
         if mac_address:
             return self.reader_session.get(DOT1DTP_FDB_PORT + '.' + mac_address)
         return self.reader_session.walk(DOT1DTP_FDB_PORT)
+
+    def change_port_status_for_all(self, list_ports, value: PortStatus) -> bool:
+        for port in list_ports:
+            if not self.change_port_status(port, value):
+                return False
+        return True

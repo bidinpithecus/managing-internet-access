@@ -1,5 +1,8 @@
 from flask import render_template, request, redirect, url_for, jsonify, flash
 from sqlalchemy import text
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime
+import time
 
 from snmp.snmp_manager import SNMPManager
 from models import *
@@ -110,7 +113,7 @@ def show_dashboard():
 @app.route('/api/schedule', methods=['GET', 'POST'])
 def schedule():
     if request.method == 'POST':
-        data = request.get_json()
+        data = request.form
 
         start_date = data.get('start_date')
         finish_date = data.get('finish_date')
@@ -122,6 +125,8 @@ def schedule():
         existing_port = Port.query.filter_by(id=port_id).first()
         if not existing_port:
             return jsonify({"message": "Port unavailable"}), 400
+        
+        switch = Switch.query.filter_by(switch_id=port_id).first()
 
         new_scheduling = Scheduling(
             start_date = start_date,
@@ -131,12 +136,29 @@ def schedule():
         db.session.add(new_scheduling)
         db.session.commit()
 
-        return jsonify({"message": "Schedule added successfully!"}), 201
+        list_ports = Port.query.filter_by(classroom_id=existing_port.classroom_id).all()
 
-    elif request.method == 'GET':
-        schedules = Scheduling.query.all()
-        result_list = [schedule.to_dict() for schedule in schedules]
-        return jsonify(result_list), 200
+        snmpManager = SNMPManager(switch.ip, switch.read_community, switch.write_community, switch.snmp_version)
+        scheduler_start = BackgroundScheduler()
+        scheduler_end = BackgroundScheduler()
+
+        dt_start = datetime.fromisoformat(start_date)
+        dt_end = datetime.fromisoformat(finish_date)
+
+        start_time = datetime(dt_start.year, dt_start.month, dt_start.day, dt_start.hour, dt_start.minute, 0)
+        end_time = datetime(dt_end.year, dt_end.month, dt_end.day, dt_end.hour, dt_end.minute, 0)
+
+        scheduler_start.add_job(snmpManager.change_port_status_for_all(list_ports, 2), 'date', run_date=start_time)
+        scheduler_end.add_job(snmpManager.change_port_status_for_all(list_ports, 1), 'date', run_date=end_time) 
+
+        try:
+            while True:
+                time.sleep(1)
+        except (KeyboardInterrupt, SystemExit):
+            scheduler_start.shutdown()
+            scheduler_end.shutdown()
+
+        return jsonify({"message": "Schedule added successfully!"}), 201
 
     return jsonify({"message": "Method not allowed"}), 405
 
