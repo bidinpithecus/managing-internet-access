@@ -52,11 +52,9 @@
         document.addEventListener("DOMContentLoaded", populateSelect);
 
         function createPCContainer(pc) {
-            // Cria o contêiner principal
             const container = document.createElement('div');
             container.className = 'pc-container';
 
-            // Cria o contêiner de status
             const statusDiv = document.createElement('div');
             statusDiv.className = 'dashboard-status';
 
@@ -95,7 +93,41 @@
             const button2 = document.createElement('button');
             button2.className = 'pc-button';
             button2.textContent = status;
+            button2.onclick(async () => {
+                const url = "http://127.0.0.1:5000/api/port-status";
 
+                const portId = pc.id;
+                if (pc.status == 1) {
+                    status = 2;
+                } else if (pc.status == 2) {
+                    status = 1;
+                }
+
+                const data = {
+                    port_id: portId,
+                    status_code: status
+                };
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Response status: ${response.status}`);
+                    }
+
+                    const json = await response.json();
+                    console.log(json.message); // Handle the response message
+
+                } catch (error) {
+                    console.error(error.message); // Handle the error
+                }
+            });
             buttonContainer.appendChild(button1);
             buttonContainer.appendChild(button2);
 
