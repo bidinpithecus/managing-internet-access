@@ -75,22 +75,30 @@
             statusDiv.appendChild(idP);
             statusDiv.appendChild(statusP);
 
-            // Cria o contêiner dos botões
             const buttonContainer = document.createElement('div');
             buttonContainer.className = 'pc-btn-container';
 
+            if (pc.status == 1) {
+                status = "Agendar bloqueio";
+            } else if (pc.status == 2) {
+                status = "Agendar desbloqueio";
+            }
             const button1 = document.createElement('button');
             button1.className = 'pc-button';
-            button1.textContent = 'Agendar bloqueio';
+            button1.textContent = status;
 
+            if (pc.status == 1) {
+                status = "Bloquear";
+            } else if (pc.status == 2) {
+                status = "Desbloquear";
+            }
             const button2 = document.createElement('button');
             button2.className = 'pc-button';
-            button2.textContent = 'Desbloquear';
+            button2.textContent = status;
 
             buttonContainer.appendChild(button1);
             buttonContainer.appendChild(button2);
 
-            // Junta tudo no contêiner principal
             container.appendChild(statusDiv);
             container.appendChild(buttonContainer);
 
