@@ -18,8 +18,7 @@ CREATE TABLE "switch" (
 
 CREATE TABLE "classroom" (
     "id" SERIAL PRIMARY KEY,
-    "name" VARCHAR(255) UNIQUE NOT NULL,
-    "size" INT NOT NULL
+    "name" VARCHAR(255) UNIQUE NOT NULL
 );
 
 CREATE TABLE "port_type" (
@@ -31,21 +30,32 @@ CREATE TABLE "port" (
     "id" SERIAL PRIMARY KEY,
     "number" INT NOT NULL,
     "switch_id" INT,
-    "room_id" INT,
+    "classroom_id" INT,
     "type_id" INT,
 
     FOREIGN KEY ("type_id") REFERENCES "port_type"("id"),
     FOREIGN KEY ("switch_id") REFERENCES "switch"("id"),
-    FOREIGN KEY ("room_id") REFERENCES "classroom"("id")
+    FOREIGN KEY ("classroom_id") REFERENCES "classroom"("id")
 );
 
 CREATE TABLE "scheduling" (
     "id" SERIAL PRIMARY KEY,
-    "start_date" DATE NOT NULL,
-    "finish_date" DATE NOT NULL,
+    "start_date" TIMESTAMP NOT NULL,
+    "finish_date" TIMESTAMP NOT NULL,
     "port_id" INT,
 
     FOREIGN KEY ("port_id") REFERENCES "port"("id")
 );
+
+END;
+
+BEGIN;
+
+INSERT INTO "port_type" ("description") VALUES
+('Aluno'),
+('Professor'), 
+('Switch'), 
+('Backend'), 
+('Outra sala');
 
 END;

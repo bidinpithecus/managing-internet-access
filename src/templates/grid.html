@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Grid Page</title>
+    <link rel="stylesheet" href="sty.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Port Selection Grid</h1>
+
+        <div class="grid-container">
+            <div class="grid-item blue" data-port="1">1</div>
+            <div class="grid-item red" data-port="2">2</div>
+            <div class="grid-item green" data-port="3">3</div>
+            <div class="grid-item light-gray" data-port="4">4</div>
+            <div class="grid-item dark-gray" data-port="5">5</div>
+            <div class="grid-item blue" data-port="6">6</div>
+            <div class="grid-item red" data-port="7">7</div>
+            <div class="grid-item green" data-port="8">8</div>
+            <div class="grid-item light-gray" data-port="9">9</div>
+            <div class="grid-item dark-gray" data-port="10">10</div>
+            <div class="grid-item blue" data-port="11">11</div>
+            <div class="grid-item red" data-port="12">12</div>
+            <div class="grid-item green" data-port="13">13</div>
+            <div class="grid-item light-gray" data-port="14">14</div>
+            <div class="grid-item dark-gray" data-port="15">15</div>
+            <div class="grid-item blue" data-port="16">16</div>
+            <div class="grid-item red" data-port="17">17</div>
+            <div class="grid-item green" data-port="18">18</div>
+            <div class="grid-item light-gray" data-port="19">19</div>
+            <div class="grid-item dark-gray" data-port="20">20</div>
+            <div class="grid-item blue" data-port="21">21</div>
+            <div class="grid-item red" data-port="22">22</div>
+            <div class="grid-item green" data-port="23">23</div>
+            <div class="grid-item light-gray" data-port="24">24</div>
+        </div>
+    </div>
+    
+    <div class="buttons">
+        <button id="toggle-select">Selecionar</button>
+        <button class="action-button">Agendar</button>
+        <button class="action-button">Ligar</button>
+        <button class="action-button">Desligar</button>
+    </div>
+
+    <!-- Popup Table -->
+    <div id="popup" class="popup">
+        <div class="popup-content">
+            <span class="close">&times;</span>
+            <h2>Port Information</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Port Number</th>
+                        <th>Status</th>
+                        <th>Last Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Table content will be populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

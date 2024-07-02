@@ -52,17 +52,14 @@ class Switch(db.Model):
 class Classroom(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
-    size = db.Column(db.Integer, nullable=False)
 
-    def __init__(self, name: str, size: int):
+    def __init__(self, name: str):
         self.name = name
-        self.size = size
 
     def to_dict(self):
         return {
             'id': self.id,
             'name': self.name,
-            'size': self.size
         }
 
 class Port(db.Model):

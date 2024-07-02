@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Grid Page</title>
+    <link rel="stylesheet" href="sty.css">
+    <style>
+        .popup {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        .popup-content {
+            background-color: white;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 80%;
+            max-height: 80%;
+            overflow: auto;
+        }
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Port Selection Grid</h1>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const ip = 1;
+                fetch(`/api/switch?ip=${ip}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const portList = document.getElementById('port-list');
+                        data.forEach(port => {
+                            const portItem = document.createElement('li');
+                            portItem.id = port.id;
+                            portItem.textContent = port.number;
+                            portItem.addEventListener('click', function() {
+                                fetch(`/switch/${switch.id}/ports`)
+                                    .then(response => response.json())
+                                    .then(ports => {
+                                        alert(`Portas do Switch ${switch.name}: ${ports.map(port => port.number).join(', ')}`);
+                                        // Aqui você pode abrir uma nova página ou fazer outra ação com as portas
+                                    })
+                                    .catch(error => console.error('Erro ao buscar portas:', error));
+                            });
+                            switchList.appendChild(switchItem);
+                        });
+                    })
+                    .catch(error => console.error('Erro ao buscar switches:', error));
+            });
+        </script>
+
+
+
+
+
+        <div class="grid-container">
+            <div class="grid-item blue" data-port="1">1</div>
+            <div class="grid-item red" data-port="2">2</div>
+            <div class="grid-item green" data-port="3">3</div>
+            <div class="grid-item light-gray" data-port="4">4</div>
+            <div class="grid-item dark-gray" data-port="5">5</div>
+            <div class="grid-item blue" data-port="6">6</div>
+            <div class="grid-item red" data-port="7">7</div>
+            <div class="grid-item green" data-port="8">8</div>
+            <div class="grid-item light-gray" data-port="9">9</div>
+            <div class="grid-item dark-gray" data-port="10">10</div>
+            <div class="grid-item blue" data-port="11">11</div>
+            <div class="grid-item red" data-port="12">12</div>
+            <div class="grid-item green" data-port="13">13</div>
+            <div class="grid-item light-gray" data-port="14">14</div>
+            <div class="grid-item dark-gray" data-port="15">15</div>
+            <div class="grid-item blue" data-port="16">16</div>
+            <div class="grid-item red" data-port="17">17</div>
+            <div class="grid-item green" data-port="18">18</div>
+            <div class="grid-item light-gray" data-port="19">19</div>
+            <div class="grid-item dark-gray" data-port="20">20</div>
+            <div class="grid-item blue" data-port="21">21</div>
+            <div class="grid-item red" data-port="22">22</div>
+            <div class="grid-item green" data-port="23">23</div>
+            <div class="grid-item light-gray" data-port="24">24</div>
+        </div>
+    </div>
+    
+    <div class="buttons">
+        <button id="toggle-select">Selecionar</button>
+        <button class="action-button">Agendar</button>
+        <button class="action-button">Ligar</button>
+        <button class="action-button">Desligar</button>
+    </div>
+
+    <div id="popup" class="popup">
+        <div class="popup-content">
+            <span class="close">&times;</span>
+            <h2>Port Information</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Port Number</th>
+                        <th>Status</th>
+                        <th>Last Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButton = document.getElementById('toggle-select');
+            toggleButton.addEventListener('click', function() {
+                const selectedPort = document.querySelector('.grid-item.selected');
+                if (selectedPort) {
+                    const portNumber = selectedPort.getAttribute('data-port');
+                    fetch(`/api/switch?ip=${ip}`, {
+                        method: 'GET'
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Switch encontrado:', data);
+                        const popupTableBody = document.querySelector('#popup table tbody');
+                        popupTableBody.innerHTML = `
+                            <tr>
+                                <td>${portNumber}</td>
+                                <td>${data.status}</td>
+                                <td>${data.last_update}</td>
+                            </tr>
+                        `;
+                        const popup = document.getElementById('popup');
+                        popup.style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('Erro ao buscar o switch:', error);
+                        alert('Erro ao buscar o switch. Verifique o console para mais detalhes.');
+                    });
+                } else {
+                    alert('Por favor, selecione um porto na grade.');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

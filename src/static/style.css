@@ -142,3 +142,16 @@
 .dashboard-status p{
     margin: 2px;
 }
+.pc-container {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+    background-color: #f9f9f9;
+}
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 20px;
+    margin-top: 550px;
+}

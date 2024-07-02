@@ -1,21 +1,23 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{url_for('static', filename='styleLogin.css')}}">
 </head>
-<body class="login-body">
+<body>
     <div class="login-container">
-        <h1>Login</h1>
-        <form action="/login" method="post">
-            <label for="username">Nome de usuário</label>
-            <input type="text" id="username" name="username" required>
-            <label for="password">Senha</label>
-            <input type="password" id="password" name="password" required>
-            <button type="submit">Entrar</button>
+        <form class="login-form" action="http://127.0.0.1:5000/api/login" method="post">
+            <input type="text" id="username" name="username" placeholder="Usuario" class="login-input" required>
+            <input type="password" id="password" name="password" placeholder="Senha" class="login-input" required>
+            <button type="submit" class="login-button">Entrar</button>
         </form>
+
+        <form class="login-form" action="http://127.0.0.1:5000/signup" method="get">
+            <button type="submit" class="create-account-button">Cadastrar</button>
+        </div>
     </div>
 </body>
 </html>
+

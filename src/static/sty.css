@@ -1,0 +1,158 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    width: 90%;
+    margin-top: 20px;
+}
+
+h2 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-gap: 10px;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.grid-item {
+    color: white;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2em;
+    cursor: pointer;
+    aspect-ratio: 1;
+    user-select: none;
+}
+
+.grid-item.blue {
+    background-color: #1877f2;
+}
+
+.grid-item.red {
+    background-color: #e63946;
+}
+
+.grid-item.green {
+    background-color: #42b72a;
+}
+
+.grid-item.light-gray {
+    background-color: #d3d3d3;
+    color: black;
+}
+
+.grid-item.dark-gray {
+    background-color: #555555;
+}
+
+.grid-item:hover {
+    opacity: 0.8;
+}
+
+.grid-item.blue.selected {
+    background-color: #0f5bb5;
+    border: 3px solid #0a3d7e;
+}
+
+.grid-item.red.selected {
+    background-color: #b52a38;
+    border: 3px solid #e63946;
+}
+
+.grid-item.green.selected {
+    background-color: #2e7e1d;
+    border: 3px solid #42b72a;
+}
+
+.grid-item.light-gray.selected {
+    background-color: #a9a9a9;
+    border: 3px solid #787878;
+}
+
+.grid-item.dark-gray.selected {
+    background-color: #333333;
+    border: 3px solid #1a1a1a;
+}
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+button {
+    background-color: #1877f2;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0f5bb5;
+}
+
+/* Add this to your existing style.css or in a new CSS file */
+
+.popup {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.popup-content {
+    background-color: #fff;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 10px;
+    position: relative;
+}
+
+.popup-content h2 {
+    text-align: center;
+}
+
+.close {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}

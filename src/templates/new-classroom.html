@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='styleNewClassroom.css')}}">
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const classroomForm = document.querySelector(".new-classroom-form");
+            const switchForm = document.querySelector(".new-switch-form");
+
+            let classroomRegistered = false;
+            let switchRegistered = false;
+
+            function checkRedirect() {
+                if (classroomRegistered && switchRegistered) {
+                    window.location.href = "http://127.0.0.1:5000/set-ports-switch";
+                }
+            }
+
+            classroomForm.addEventListener("submit", function(event) {
+                event.preventDefault();
+                const formData = new FormData(classroomForm);
+                fetch(classroomForm.action, {
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => {
+                    if (response.status === 201) {
+                        classroomRegistered = true;
+                        classroomForm.querySelector(".new-classroom-button").disabled = true;
+                        classroomForm.querySelector(".new-classroom-button").style.pointerEvents = "none";
+                        classroomForm.querySelector(".new-classroom-button").textContent = "Cadastrado";
+                        checkRedirect();
+                    } else {
+                        alert("Erro ao cadastrar sala");
+                    }
+                })
+                .catch(error => console.error("Erro:", error));
+            });
+
+            switchForm.addEventListener("submit", function(event) {
+                event.preventDefault();
+                const formData = new FormData(switchForm);
+                fetch(switchForm.action, {
+                    method: "POST",
+                    body: formData,
+                })
+                .then(response => {
+                    if (response.status === 201) {
+                        switchRegistered = true;
+                        switchForm.querySelector(".new-switch-button").disabled = true;
+                        switchForm.querySelector(".new-switch-button").style.pointerEvents = "none";
+                        switchForm.querySelector(".new-switch-button").textContent = "Cadastrado";
+                        checkRedirect();
+                    } else {
+                        alert("Erro ao cadastrar switch");
+                    }
+                })
+                .catch(error => console.error("Erro:", error));
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="new-classroom-container">
+        <p>Cadastro de Sala</p>
+        <form class="new-classroom-form" action="http://127.0.0.1:5000/api/classroom" method="post">
+            <input type="text" id="classroom-name" name="classroom-name" placeholder="Nome da sala" class="new-classroom-input" required>
+            <button type="submit" class="new-classroom-button">Cadastrar</button>
+        </form>
+    </div>
+
+    <div class="new-switch-container">
+        <p>Cadastro de Switch</p>
+        <form class="new-switch-form" action="http://127.0.0.1:5000/api/switch" method="post">
+            <input type="text" id="classroom_name" name="classroom_name" placeholder="Nome da sala" class="new-classroom-input" required>
+            <input type="text" id="mac" name="mac" placeholder="Endereço mac" class="new-switch-input" required>
+            <input type="text" id="ip" name="ip" placeholder="Endereço ip" class="new-switch-input" required>
+            <input type="text" id="read_community" name="read_community" placeholder="Comunidade de leitura" class="new-switch-input" required>
+            <input type="text" id="write_community" name="write_community" placeholder="Comunidade de escrita" class="new-switch-input" required>
+            <input type="text" id="snmp_version" name="snmp_version" placeholder="Versão SNMP" class="new-switch-input" required>
+            <input type="text" id="num_of_ports" name="num_of_ports" placeholder="Número de portas" class="new-switch-input" required>
+            <button type="submit" class="new-switch-button">Cadastrar</button>
+        </form>
+    </div>
+
+    <div class="new-switch-container">
+        <form class="new-switch-form" action="http://127.0.0.1:5000/api/multiple-ports" method="post">
+            <p>Portas reservadas</p>
+            <input type="text" id="professor_port" name="professor_port" placeholder="Porta do professor" class="new-switch-input" required>
+            <input type="text" id="switch_port" name="switch_port" placeholder="Porta do switch" class="new-switch-input" required>
+            <input type="text" id="backend_port" name="backend_port" placeholder="Porta do backend" class="new-switch-input" required>
+            <input type="text" id="other_rooms_port" name="other_rooms_port" placeholder="Portas de outra sala (separadas por ',')" class="new-switch-input" required>
+            <button type="submit" name="action" value="register">Cadastrar</button>
+        </form>
+    </div>
+    
+</body>
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='styleNewClassroom.css')}}">
+</head>
+<body>
+    <div class="new-classroom-container">
+        <p>Cadastro de Sala</p>
+        <form class="new-classroom-form" action="http://127.0.0.1:5000/api/classroom" method="post">
+            <input type="text" id="classroom-name" name="classroom-name" placeholder="Nome da sala" class="new-classroom-input" required>
+            <button type="submit" class="new-classroom-button">Cadastrar</button>
+        </form>
+    </div>
+
+    <div class="new-switch-container">
+        <p>Cadastro de Switch</p>
+        <form class="new-switch-form" action="http://127.0.0.1:5000/api/switch" method="post">
+            <input type="text" id="mac" name="mac" placeholder="Endereço mac" class="new-switch-input" required>
+            <input type="text" id="ip" name="ip" placeholder="Endereço ip" class="new-switch-input" required>
+            <input type="text" id="read_community" name="read_community" placeholder="Comunidade de leitura" class="new-switch-input" required>
+            <input type="text" id="write_community" name="write_community" placeholder="Comunidade de escrita" class="new-switch-input" required>
+            <input type="text" id="snmp_version" name="snmp_version" placeholder="Versão SNMP" class="new-switch-input" required>
+            <input type="text" id="num_of_ports" name="num_of_ports" placeholder="Número de portas" class="new-switch-input" required>
+            <button type="submit" class="new-switch-button">Cadastrar</button>
+        </form>
+    </div>
+</body>
+</html> -->
+

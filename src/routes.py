@@ -11,7 +11,7 @@ app = create_app()
 def index():
     return render_template('index.html')
 
-@app.route('/healthcheck', methods=['GET'])
+@app.route('/api/healthcheck', methods=['GET'])
 def healthcheck():
     try:
         db.session.execute(text('SELECT 1'))
@@ -19,32 +19,36 @@ def healthcheck():
     except Exception as e:
         return jsonify({"status": "unhealthy", "reason": str(e)}), 500
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET'])
+def show_login():
+    return render_template('login.html')
+
+@app.route('/api/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        data = request.get_json()
-        user = data.get('user')
-        password = data.get('password')
-
+        user = request.form.get('username')
+        password = request.form.get('password')
         if not all([user, password]):
             return jsonify({"message": "Missing data"}), 400
 
         user = Admin.query.filter_by(user=user).first()
         if user and user.verify_password(password):
-            message = 'Logged in successfully'
-            flash(message)
-            return jsonify({"message": message}), 200
+            flash("Logged in successfully", "success")
+            return redirect(url_for('show_classroom'))
         else:
-            message = 'Invalid username or password'
-            flash(message)
-            return jsonify({"message": message}), 401
+            flash("Invalid username or password", "error")
+            return redirect(url_for('show_login'))
     return render_template('login.html')
 
-@app.route('/signup', methods=['GET', 'POST'])
+@app.route('/signup', methods=['GET'])
+def show_signup():
+    return render_template('signup.html')
+
+@app.route('/api/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        data = request.get_json()
-        user = data.get('user')
+        data = request.form
+        user = data.get('username')
         password = data.get('password')
 
         if not all([user, password]):
@@ -54,7 +58,7 @@ def signup():
         if existing_user:
             message = 'Username already taken'
             flash(message)
-            return jsonify({"message": message}), 401
+            return redirect(url_for('login'))
 
         new_user = Admin(user=user, password=password)
         db.session.add(new_user)
@@ -62,23 +66,50 @@ def signup():
 
         message = 'Signup successful. Please log in'
         flash(message)
-        return jsonify({"message": message}), 200
+        return redirect(url_for('show_login'))
     return render_template('signup.html')
 
-@app.route('/dashboard')
+@app.route('/api/dashboard')
 def dashboard():
     return render_template('dashboard.html')
 
-@app.route('/schedule', methods=['POST'])
+@app.route('/api/schedule', methods=['GET', 'POST'])
 def schedule():
-    # Schedule block/unblock ports
-
-    return redirect(url_for('dashboard'))
-
-@app.route('/switch', methods=['GET', 'POST'])
-def switch():
     if request.method == 'POST':
         data = request.get_json()
+
+        start_date = data.get('start_date')
+        finish_date = data.get('finish_date')
+        port_id = data.get('port_id')
+
+        if not all([start_date, finish_date, port_id]):
+            return jsonify({"message": "Missing data"}), 400
+
+        existing_port = Port.query.filter_by(id=port_id).first()
+        if not existing_port:
+            return jsonify({"message": "Port unavailable"}), 400
+
+        new_scheduling = Scheduling(
+            start_date = start_date,
+            finish_date = finish_date,
+            port_id = port_id,
+        )
+        db.session.add(new_scheduling)
+        db.session.commit()
+
+        return jsonify({"message": "Schedule added successfully!"}), 201
+
+    elif request.method == 'GET':
+        schedules = Scheduling.query.all()
+        result_list = [schedule.to_dict() for schedule in schedules]
+        return jsonify(result_list), 200
+
+    return jsonify({"message": "Method not allowed"}), 405
+
+@app.route('/api/switch', methods=['GET', 'POST'])
+def switch():
+    if request.method == 'POST':
+        data = request.form
 
         mac = data.get('mac')
         ip = data.get('ip')
@@ -87,7 +118,9 @@ def switch():
         snmp_version = data.get('snmp_version')
         num_of_ports = data.get('num_of_ports')
 
-        if not all([mac, ip, read_community, write_community, snmp_version, num_of_ports]):
+        classroom_name = data.get('classroom_name')
+
+        if not all([mac, ip, read_community, write_community, snmp_version, num_of_ports, classroom_name]):
             return jsonify({"message": "Missing data"}), 400
 
         existing_mac = Switch.query.filter_by(mac=mac).first()
@@ -109,6 +142,17 @@ def switch():
         db.session.add(new_switch)
         db.session.commit()
 
+        classroom = Classroom.query.filter_by(name=classroom_name).first()
+
+        for port_number in range(1, int(num_of_ports) + 1):
+            new_port = Port(
+                switch_id=new_switch.id,
+                number=port_number,
+                type_id=1,
+                classroom_id=classroom.id
+            )
+            db.session.add(new_port)
+            db.session.commit()
         return jsonify({"message": "Switch added successfully!"}), 201
 
     elif request.method == 'GET':
@@ -128,21 +172,24 @@ def switch():
 
     return jsonify({"message": "Method not allowed"}), 405
 
-@app.route('/classroom', methods=['GET', 'POST'])
+@app.route('/api/classroom')
+def show_classroom():
+    return render_template('new-classroom.html')
+
+@app.route('/api/classroom', methods=['GET', 'POST'])
 def classroom():
     if request.method == 'POST':
-        data = request.get_json()
-        name = data.get('name')
-        size = data.get('size')
+        data = request.form
+        name = data.get('classroom-name')
 
-        if not all([name, size]):
+        if not all([name]):
             return jsonify({"message": "Missing data"}), 400
 
         existing_room = Classroom.query.filter_by(name=name).first()
         if existing_room:
             return jsonify({"message": "Classroom already exists"}), 400
 
-        new_classroom = Classroom(name=name, size=size)
+        new_classroom = Classroom(name=name)
         db.session.add(new_classroom)
         db.session.commit()
 
@@ -165,7 +212,28 @@ def classroom():
 
     return jsonify({"message": "Method not allowed"}), 405
 
-@app.route('/porttype', methods=['GET', 'POST'])
+@app.route('/api/multiple-ports', methods=['POST'])
+def handle_ports():
+    action = request.form.get('action')
+
+    if action == 'register':
+        professor_port = request.form.get('professor_port')
+        switch_port = request.form.get('switch_port')
+        backend_port = request.form.get('backend_port')
+        other_rooms_ports = request.form.get('other_rooms_port').split(',')
+
+        return jsonify({
+            'message': 'Ports registered successfully',
+            'professor_port': professor_port,
+            'switch_port': switch_port,
+            'backend_port': backend_port,
+            'other_rooms_ports': other_rooms_ports
+        }), 200
+
+    # Handle other actions if needed
+    return jsonify({'error': 'Invalid action'}), 400
+
+@app.route('/api/porttype', methods=['GET', 'POST'])
 def porttype():
     if request.method == 'POST':
         data = request.get_json()
@@ -201,7 +269,11 @@ def porttype():
 
     return jsonify({"message": "Method not allowed"}), 405
 
-@app.route('/port', methods=['GET', 'POST'])
+@app.route('/set-ports-switch')
+def show_ports():
+    return render_template('set-ports-switch.html')
+
+@app.route('/api/port', methods=['GET', 'POST'])
 def port():
     if request.method == 'POST':
         data = request.get_json()
@@ -248,7 +320,7 @@ def port():
 
     return jsonify({"message": "Method not allowed"}), 405
 
-@app.route('/port-status', methods=['GET', 'POST'])
+@app.route('/api/port-status', methods=['GET', 'POST'])
 def port_status():
     if request.method == 'POST':
         data = request.get_json()
