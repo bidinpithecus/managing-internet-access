@@ -10,10 +10,23 @@ class SNMPManager:
         self.writer_session = Session(hostname=hostname, community=community_write, version=version)
 
     def get_port_status(self, port_number: Optional[int] = None) -> list:
-        if port_number:
-            return self.reader_session.get(IF_OPER_STATUS + '.' + str(port_number))
-        return self.reader_session.walk(IF_OPER_STATUS)
+        if port_number is not None:
+            occupied_status = self.reader_session.get(IF_OPER_STATUS + '.' + str(port_number)).value
+            open_status = self.reader_session.get(IF_ADMIN_STATUS + '.' + str(port_number)).value
+            return [{'occupied_status': occupied_status, 'open_status': open_status}]
+        
+        ports_status = []
+        occupied_status_of_all = self.reader_session.walk(IF_OPER_STATUS)
+        open_status_for_all = self.reader_session.walk(IF_ADMIN_STATUS)
+        
+        for (occupied_status, open_status) in enumerate(zip(occupied_status_of_all, open_status_for_all), start=1):
+            ports_status.append({
+                'occupied_status': occupied_status.value,
+                'open_status': open_status.value
+            })
 
+        return ports_status
+    
     def change_port_status(self, port_number: int, value: PortStatus) -> bool:
         return self.writer_session.set(IF_ADMIN_STATUS + '.' + str(port_number), value, 'i')
 

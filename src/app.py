@@ -13,11 +13,4 @@ def create_app() -> Flask:
     app.config['CORS_HEADERS'] = 'Content-Type'
     db.init_app(app)
 
-    snmp_manager = SNMPManager(
-        hostname=SnmpConfig.HOSTNAME,
-        community_read=SnmpConfig.COMMUNITY_READ_NAME,
-        community_write=SnmpConfig.COMMUNITY_WRITE_NAME,
-        version=SnmpConfig.VERSION
-    )
-
     return app

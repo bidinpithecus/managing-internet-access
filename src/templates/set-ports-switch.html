@@ -158,7 +158,6 @@
                         return response.json();
                     })
                     .then(data => {
-                        console.log('Switch encontrado:', data);
                         const popupTableBody = document.querySelector('#popup table tbody');
                         popupTableBody.innerHTML = `
                             <tr>

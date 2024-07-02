@@ -11,6 +11,7 @@
         <div class="main-container">
             <div class="new-switch-container">
                 <form class="new-switch-form" action="http://127.0.0.1:5000/api/dashboard" method="post">
+                    <p>Selecione uma sala para abrir seu dashboard</p>
                     <select id="classroom_id" name="classroom_id" class="new-classroom-input" required>
                         <option value="" disabled selected>Sala de aula</option>
                     </select>
@@ -61,51 +62,73 @@
             const idP = document.createElement('p');
             idP.textContent = `Porta ${pc.number}`;
 
-            const statusP = document.createElement('p');
+            const typeP = document.createElement('p');
+            typeP.textContent = `Tipo ${pc.type_description}`;
+
+            const openStatusP = document.createElement('p');
             let status;
-            if (pc.status == 1) {
+            if (pc.open_status == 1) {
                 status = "Aberta";
-            } else if (pc.status == 2) {
+            } else if (pc.open_status == 2) {
                 status = "Fechada";
             }
-            statusP.textContent = `Status: ${status}`;
+            openStatusP.textContent = `Status: ${status}`;
+
+            const occupiedStatusP = document.createElement('p');
+            if (pc.occupied_status == 1) {
+                status = "Em uso";
+            } else if (pc.occupied_status == 2) {
+                status = "Livre";
+            }
+            occupiedStatusP.textContent = `${status}`;
 
             statusDiv.appendChild(idP);
-            statusDiv.appendChild(statusP);
+            statusDiv.appendChild(typeP);
+            statusDiv.appendChild(openStatusP);
+            statusDiv.appendChild(occupiedStatusP);
 
             const buttonContainer = document.createElement('div');
             buttonContainer.className = 'pc-btn-container';
 
-            if (pc.status == 1) {
-                status = "Agendar bloqueio";
-            } else if (pc.status == 2) {
-                status = "Agendar desbloqueio";
+            let button1Text, button2Text;
+            if (pc.open_status == 1) {
+                button1Text = "Agendar bloqueio";
+                button2Text = "Bloquear";
+            } else if (pc.open_status == 2) {
+                button1Text = "Agendar desbloqueio";
+                button2Text = "Desbloquear";
             }
+            
             const button1 = document.createElement('button');
             button1.className = 'pc-button';
-            button1.textContent = status;
-
-            if (pc.status == 1) {
-                status = "Bloquear";
-            } else if (pc.status == 2) {
-                status = "Desbloquear";
+            button1.textContent = button1Text;
+            if (pc.type_id !== 1) {
+                button1.disabled = true;
+                button1.style.pointerEvents = "none";
             }
+
             const button2 = document.createElement('button');
             button2.className = 'pc-button';
-            button2.textContent = status;
-            button2.onclick(async () => {
+            button2.textContent = button2Text;
+            if (pc.type_id !== 1) {
+                button2.disabled = true;
+                button2.style.pointerEvents = "none";
+            }
+
+            async function button2Function() {
                 const url = "http://127.0.0.1:5000/api/port-status";
 
                 const portId = pc.id;
-                if (pc.status == 1) {
-                    status = 2;
-                } else if (pc.status == 2) {
-                    status = 1;
+                let newStatus;
+                if (pc.open_status == 1) {
+                    newStatus = 2;
+                } else if (pc.open_status == 2) {
+                    newStatus = 1;
                 }
 
                 const data = {
                     port_id: portId,
-                    status_code: status
+                    status_code: newStatus
                 };
 
                 try {
@@ -121,13 +144,23 @@
                         throw new Error(`Response status: ${response.status}`);
                     }
 
-                    const json = await response.json();
-                    console.log(json.message); // Handle the response message
+                    // Update the pc object
+                    pc.open_status = newStatus;
 
+                    // Update the DOM elements
+                    openStatusP.textContent = `Status: ${newStatus == 1 ? "Aberta" : "Fechada"}`;
+                    occupiedStatusP.textContent = `${pc.occupied_status == 1 ? "Em uso" : "Livre"}`;
+                    
+                    // Update button texts
+                    button1.textContent = newStatus == 1 ? "Agendar bloqueio" : "Agendar desbloqueio";
+                    button2.textContent = newStatus == 1 ? "Bloquear" : "Desbloquear";
+                    
                 } catch (error) {
-                    console.error(error.message); // Handle the error
+                    console.error(error.message);
                 }
-            });
+            }
+
+            button2.onclick = button2Function;
             buttonContainer.appendChild(button1);
             buttonContainer.appendChild(button2);
 
@@ -136,6 +169,7 @@
 
             return container;
         }
+
 
         function addPCContainersToDocument(pcs, containerElement) {
             pcs.forEach(pc => {
@@ -163,7 +197,6 @@
                 })
                 .then(ports => {
                     if (ports) {
-                        console.log(ports);
                         const containerElement = document.getElementById('pc-containers');
                         containerElement.innerHTML = '';
                         addPCContainersToDocument(ports, containerElement);

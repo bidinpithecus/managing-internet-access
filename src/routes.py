@@ -84,7 +84,8 @@ def dashboard():
             return jsonify({"message": "Classroom not found"}), 400
 
         ports = Port.query.filter_by(classroom_id=classroom_id).order_by(Port.id)
-
+        portTypes = {pt.id: pt.description for pt in PortType.query.all()}
+        print(portTypes)
         switch = Switch.query.filter_by(id=ports[0].switch_id).first()
 
         snmpManager = SNMPManager(switch.ip, switch.read_community, switch.write_community, switch.snmp_version)
@@ -92,8 +93,13 @@ def dashboard():
         result_list = []
         for port in ports:
             port_with_status = port.to_dict()
-            status = snmpManager.get_port_status(port.number)
-            port_with_status['status'] = status.value
+            type_id = port_with_status['type_id']
+            type_description = portTypes[port.to_dict()['type_id']]
+            status_dict = snmpManager.get_port_status(port.number)[0]
+            port_with_status['occupied_status'] = int(status_dict['occupied_status'])
+            port_with_status['open_status'] = int(status_dict['open_status'])
+            port_with_status['type_description'] = type_description
+            port_with_status['type_id'] = type_id
             result_list.append(port_with_status)
         return jsonify(result_list), 200
 
@@ -448,7 +454,7 @@ def port_status():
         if not switch:
             return jsonify({"message": "Switch not found"}), 404
 
-        snmp_manager = SNMPManager(switch.hostname, switch.community_read, switch.community_write, switch.version)
+        snmp_manager = SNMPManager(switch.ip, switch.read_community, switch.write_community, switch.snmp_version)
         ret = snmp_manager.change_port_status(port.number, status_code)
 
         if ret:
