@@ -87,21 +87,25 @@
     margin: 0;
     font-size: 30px;
 }
-
-.block-btn-container{
+.block-btn-container {
     position: absolute;
-    top: 40px;
-    right: 40px;
     padding: 10px 20px;
     color: white;
     border: none;
     border-radius: 5px;
     white-space: nowrap;
 }
-.block-button{
-    width: 90%;
+.block-btn-container:nth-child(1) {
+    top: 40px;
+    right: 40px;
+}
+.block-btn-container:nth-child(2) {
+    top: 100px;
+    right: 40px;
+}
+.block-button {
+    width: 100%;
     padding: 14px;
-    margin-right: 14px; 
     background-color: #007BFF;
     border: none;
     border-radius: 10px;
@@ -115,7 +119,7 @@
 }
 .pc-btn-container{
     display: flex;
-    justify-content: flex-start;
+    justify-content: center;
     margin-bottom: 20px;
 }
 .pc-button {

@@ -55,7 +55,6 @@ INSERT INTO "port_type" ("description") VALUES
 ('Aluno'),
 ('Professor'), 
 ('Switch'), 
-('Backend'), 
-('Outra sala');
+('Backend');
 
 END;

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='styleNewPort.css')}}">
+    <script>
+        async function getSwitches() {
+            const url = "http://127.0.0.1:5000/api/switch";
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+
+                const json = await response.json();
+                return json;
+            } catch (error) {
+                console.error(error.message);
+
+                return [];
+            }
+        }
+
+        async function getClassrooms() {
+            const url = "http://127.0.0.1:5000/api/classroom";
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+
+                const json = await response.json();
+                return json;
+            } catch (error) {
+                console.error(error.message);
+
+                return [];
+            }
+        }
+
+        async function getAvailablePorts(switch_id, classroom_id) {
+            const url = `http://127.0.0.1:5000/api/port`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+
+                const json = await response.json();
+
+                const filteredPorts = json.filter(port => port.switch_id == switch_id && port.type_id == 1 && port.classroom_id == classroom_id);
+
+                return filteredPorts;
+            } catch (error) {
+                console.error(error.message);
+                return [];
+            }
+        }
+
+        function createPortSelect(name, label, ports, isMultiSelect = false) {
+            const div = document.createElement('div');
+            div.classList.add('port-select-container');
+            const selectLabel = document.createElement('label');
+            selectLabel.textContent = label;
+            div.appendChild(selectLabel);
+
+            const select = document.createElement('select');
+            select.name = name;
+            select.id = name;
+            select.classList.add('new-switch-input');
+            select.required = true;
+
+            if (isMultiSelect) {
+                select.multiple = true;
+                select.name = name + '[]';
+            }
+
+            const defaultOption = document.createElement('option');
+                defaultOption.value = 0;
+                defaultOption.textContent = `Nenhuma`;
+                defaultOption.selected = true;
+                select.appendChild(defaultOption);
+
+            ports.forEach(port => {
+                const option = document.createElement('option');
+                option.value = port.id;
+                option.textContent = `Porta ${port.number}`;
+                select.appendChild(option);
+            });
+
+            div.appendChild(select);
+            return div;
+        }
+
+        async function populateSwitchSelect() {
+            const switches = await getSwitches();
+            const switchSelectElement = document.getElementById('switch_id');
+            const classroomSelectElement = document.getElementById('classroom_id');
+            const portFieldsContainer = document.getElementById('dynamic-port-fields');
+
+            switches.forEach(sw => {
+                const option = document.createElement('option');
+                option.value = sw.id;
+                option.text = sw.ip;
+                switchSelectElement.appendChild(option);
+            });
+
+            switchSelectElement.addEventListener('change', async function() {
+                const selectedSwitch = switches.find(sw => sw.id == this.value);
+                portFieldsContainer.innerHTML = '';
+
+                if (selectedSwitch) {
+                    const ports = await getAvailablePorts(selectedSwitch.id, classroomSelectElement.value);
+                    const otherRoomsPortSelect = createPortSelect('other_rooms_port', 'Portas de outra sala', ports, true);
+
+                    portFieldsContainer.appendChild(otherRoomsPortSelect);
+                }
+            });
+        }
+
+        async function populateClassroomSelect() {
+            const classrooms = await getClassrooms();
+            const selectElement = document.getElementById('classroom_id');
+            const portFieldsContainer = document.getElementById('dynamic-port-fields');
+
+            classrooms.forEach(cl => {
+                const option = document.createElement('option');
+                option.value = cl.id;
+                option.text = cl.name;
+                selectElement.appendChild(option);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", populateSwitchSelect);
+        document.addEventListener("DOMContentLoaded", populateClassroomSelect);
+
+        async function setPortsClassrooms() {
+            const otherRoomsPortSelect = document.getElementById('other_rooms_port');
+            const startDateElement = document.getElementById('startDateTime');
+            const finishDateElement = document.getElementById('finishDateTime');
+
+            let selected_ports = [];
+
+            if (!(otherRoomsPortSelect.selectedOptions.length == 1 && otherRoomsPortSelect.selectedOptions[0].value == 0)) {
+                selected_ports = Array.from(otherRoomsPortSelect.selectedOptions).map(option => parseInt(option.value));
+            }
+
+            const form = document.getElementById('form');
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const payload = {
+                    start_date: startDateElement.value,
+                    finish_date: finishDateElement.value,
+                    port_ids: selected_ports,
+                };
+
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/api/schedule', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Request failed');
+                    }
+
+                    const data = await response.json();
+
+                    if (response.status == 201) {
+                        window.location.href = "http://127.0.0.1:5000/dashboard";
+                    }
+
+                } catch (error) {
+                    console.error('Error sending request:', error);
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="new-switch-container">
+        <form id="form" class="new-switch-form" action="http://127.0.0.1:5000/api/schedule" method="post">
+            <p>Agendamento de Bloqueio de Portas</p>
+            <div class="new-switch-div">
+                <label for="startDateTime">Data e Hora de início:</label>
+                <input type="datetime-local" id="startDateTime" name="startDateTime" class="new-switch-input" ><br><br>
+                <label for="finishDateTime">Data e Hora de fim:</label>
+                <input type="datetime-local" id="finishDateTime" class="new-switch-input" >
+                <select id="classroom_id" name="classroom_id" class="new-switch-input" required>
+                    <option value="" disabled selected>Sala de aula</option>
+                </select>
+                <select id="switch_id" name="switch_id" class="new-switch-input" required>
+                    <option value="" disabled selected>Ip do Switch</option>
+                </select>
+                <div id="dynamic-port-fields"></div>
+                <button id="fake_register_button" class="new-switch-button" onclick="setPortsClassrooms()">Agendar</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

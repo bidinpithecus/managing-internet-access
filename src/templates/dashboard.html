@@ -20,7 +20,15 @@
             </div>
             <div class="grid-container" id="pc-containers"></div>
         </div>
+        <div class="block-btn-container">
+            <button class="block-button" onclick="redirectToSchedule()">Agendar bloqueio</button>
+        </div>
     </content>
+    <script>
+        function redirectToSchedule() {
+            window.location.href = 'schedule';
+        }
+    </script>
     <script>
         async function getClassrooms() {
             const url = "http://127.0.0.1:5000/api/classroom";
@@ -68,17 +76,17 @@
             const openStatusP = document.createElement('p');
             let status;
             if (pc.open_status == 1) {
-                status = "Aberta";
+                status = 'Aberta';
             } else if (pc.open_status == 2) {
-                status = "Fechada";
+                status = 'Fechada';
             }
             openStatusP.textContent = `Status: ${status}`;
 
             const occupiedStatusP = document.createElement('p');
             if (pc.occupied_status == 1) {
-                status = "Em uso";
+                status = 'Em uso';
             } else if (pc.occupied_status == 2) {
-                status = "Livre";
+                status = 'Livre';
             }
             occupiedStatusP.textContent = `${status}`;
 
@@ -90,21 +98,11 @@
             const buttonContainer = document.createElement('div');
             buttonContainer.className = 'pc-btn-container';
 
-            let button1Text, button2Text;
+            let button2Text;
             if (pc.open_status == 1) {
-                button1Text = "Agendar bloqueio";
-                button2Text = "Bloquear";
+                button2Text = 'Bloquear';
             } else if (pc.open_status == 2) {
-                button1Text = "Agendar desbloqueio";
-                button2Text = "Desbloquear";
-            }
-
-            const button1 = document.createElement('button');
-            button1.className = 'pc-button';
-            button1.textContent = button1Text;
-            if (pc.type_id !== 1) {
-                button1.disabled = true;
-                button1.style.pointerEvents = "none";
+                button2Text = 'Desbloquear';
             }
 
             const button2 = document.createElement('button');
@@ -112,11 +110,11 @@
             button2.textContent = button2Text;
             if (pc.type_id !== 1) {
                 button2.disabled = true;
-                button2.style.pointerEvents = "none";
+                button2.style.pointerEvents = 'none';
             }
 
             async function button2Function() {
-                const url = "http://127.0.0.1:5000/api/port-status";
+                const url = 'http://127.0.0.1:5000/api/port-status';
 
                 const portId = pc.id;
                 let newStatus;
@@ -144,24 +142,19 @@
                         throw new Error(`Response status: ${response.status}`);
                     }
 
-                    // Update the pc object
                     pc.open_status = newStatus;
 
-                    // Update the DOM elements
-                    openStatusP.textContent = `Status: ${newStatus == 1 ? "Aberta" : "Fechada"}`;
-                    occupiedStatusP.textContent = `${pc.occupied_status == 1 ? "Em uso" : "Livre"}`;
-                    
-                    // Update button texts
-                    button1.textContent = newStatus == 1 ? "Agendar bloqueio" : "Agendar desbloqueio";
-                    button2.textContent = newStatus == 1 ? "Bloquear" : "Desbloquear";
-                    
+                    openStatusP.textContent = `Status: ${newStatus == 1 ? 'Aberta' : 'Fechada'}`;
+                    occupiedStatusP.textContent = `${pc.occupied_status == 1 ? 'Em uso' : 'Livre'}`;
+
+                    button2.textContent = newStatus == 1 ? 'Bloquear' : 'Desbloquear';
+
                 } catch (error) {
                     console.error(error.message);
                 }
             }
 
             button2.onclick = button2Function;
-            buttonContainer.appendChild(button1);
             buttonContainer.appendChild(button2);
 
             container.appendChild(statusDiv);
@@ -170,7 +163,6 @@
             return container;
         }
 
-
         function addPCContainersToDocument(pcs, containerElement) {
             pcs.forEach(pc => {
                 const pcContainer = createPCContainer(pc);
@@ -178,21 +170,21 @@
             });
         }
 
-        document.addEventListener("DOMContentLoaded", function() {
-            const switchForm = document.querySelector(".new-switch-form");
+        document.addEventListener('DOMContentLoaded', function() {
+            const switchForm = document.querySelector('.new-switch-form');
 
-            switchForm.addEventListener("submit", function(event) {
+            switchForm.addEventListener('submit', function(event) {
                 event.preventDefault();
                 const formData = new FormData(switchForm);
                 fetch(switchForm.action, {
-                    method: "POST",
+                    method: 'POST',
                     body: formData,
                 })
                 .then(response => {
                     if (response.status === 200) {
                         return response.json();
                     } else {
-                        alert("Erro ao selecionar sala");
+                        alert('Erro ao selecionar sala');
                     }
                 })
                 .then(ports => {
@@ -202,7 +194,7 @@
                         addPCContainersToDocument(ports, containerElement);
                     }
                 })
-                .catch(error => console.error("Erro:", error));
+                .catch(error => console.error('Erro:', error));
             });
         });
     </script>

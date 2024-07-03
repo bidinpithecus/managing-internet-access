@@ -4,6 +4,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
 import time
 
+import random
+
 from snmp.snmp_manager import SNMPManager
 from models import *
 from app import create_app, db
@@ -88,7 +90,6 @@ def dashboard():
 
         ports = Port.query.filter_by(classroom_id=classroom_id).order_by(Port.id)
         portTypes = {pt.id: pt.description for pt in PortType.query.all()}
-        print(portTypes)
         switch = Switch.query.filter_by(id=ports[0].switch_id).first()
 
         snmpManager = SNMPManager(switch.ip, switch.read_community, switch.write_community, switch.snmp_version)
@@ -106,37 +107,70 @@ def dashboard():
             result_list.append(port_with_status)
         return jsonify(result_list), 200
 
+@app.route('/api/dashboard-test', methods=['POST'])
+def dashboard_test():
+    if request.method == 'POST':
+        data = request.form
+
+        classroom_id = data.get('classroom_id')
+
+        if not all([classroom_id]):
+            return jsonify({"message": "Missing data"}), 400
+
+        classroom: Classroom | None = Classroom.query.filter_by(id=classroom_id).first()
+        if not classroom:
+            return jsonify({"message": "Classroom not found"}), 400
+
+        ports = Port.query.filter_by(classroom_id=classroom_id).order_by(Port.id)
+        portTypes = {pt.id: pt.description for pt in PortType.query.all()}
+
+        result_list = []
+        for port in ports:
+            port_with_status = port.to_dict()
+            type_id = port_with_status['type_id']
+            type_description = portTypes[port.to_dict()['type_id']]
+            status_dict = {'occupied_status': random.randint(1, 2), 'open_status': random.randint(1, 2)}
+            port_with_status['occupied_status'] = int(status_dict['occupied_status'])
+            port_with_status['open_status'] = int(status_dict['open_status'])
+            port_with_status['type_description'] = type_description
+            port_with_status['type_id'] = type_id
+            result_list.append(port_with_status)
+        return jsonify(result_list), 200
+
 @app.route('/dashboard')
 def show_dashboard():
     return render_template('dashboard.html')
 
+@app.route('/schedule')
+def show_schedule():
+    return render_template('schedule.html')
+
 @app.route('/api/schedule', methods=['GET', 'POST'])
 def schedule():
     if request.method == 'POST':
-        data = request.form
+        data = request.get_json()
 
         start_date = data.get('start_date')
         finish_date = data.get('finish_date')
-        port_id = data.get('port_id')
+        port_ids = data.get('port_ids', [])
 
-        if not all([start_date, finish_date, port_id]):
+        if not all([start_date, finish_date, port_ids]):
             return jsonify({"message": "Missing data"}), 400
 
-        existing_port = Port.query.filter_by(id=port_id).first()
+        existing_port = Port.query.filter_by(id=port_ids[0]).first()
         if not existing_port:
             return jsonify({"message": "Port unavailable"}), 400
-        
-        switch = Switch.query.filter_by(switch_id=port_id).first()
 
-        new_scheduling = Scheduling(
-            start_date = start_date,
-            finish_date = finish_date,
-            port_id = port_id,
-        )
-        db.session.add(new_scheduling)
-        db.session.commit()
+        switch = Switch.query.filter_by(id=existing_port.switch_id).first()
 
-        list_ports = Port.query.filter_by(classroom_id=existing_port.classroom_id).all()
+        for port_id in port_ids:
+            new_scheduling = Scheduling(
+                start_date = start_date,
+                finish_date = finish_date,
+                port_id = port_id,
+            )
+            db.session.add(new_scheduling)
+            db.session.commit()
 
         snmpManager = SNMPManager(switch.ip, switch.read_community, switch.write_community, switch.snmp_version)
         scheduler_start = BackgroundScheduler()
@@ -148,15 +182,11 @@ def schedule():
         start_time = datetime(dt_start.year, dt_start.month, dt_start.day, dt_start.hour, dt_start.minute, 0)
         end_time = datetime(dt_end.year, dt_end.month, dt_end.day, dt_end.hour, dt_end.minute, 0)
 
-        scheduler_start.add_job(snmpManager.change_port_status_for_all(list_ports, 2), 'date', run_date=start_time)
-        scheduler_end.add_job(snmpManager.change_port_status_for_all(list_ports, 1), 'date', run_date=end_time) 
+        scheduler_start.add_job(snmpManager.change_port_status_for_all(port_ids, 2), 'date', run_date=start_time)
+        scheduler_end.add_job(snmpManager.change_port_status_for_all(port_ids, 1), 'date', run_date=end_time) 
 
-        try:
-            while True:
-                time.sleep(1)
-        except (KeyboardInterrupt, SystemExit):
-            scheduler_start.shutdown()
-            scheduler_end.shutdown()
+        scheduler_start.start()
+        scheduler_end.start()
 
         return jsonify({"message": "Schedule added successfully!"}), 201
 
@@ -479,6 +509,61 @@ def port_status():
         snmp_manager = SNMPManager(switch.ip, switch.read_community, switch.write_community, switch.snmp_version)
         ret = snmp_manager.change_port_status(port.number, status_code)
 
+        if ret:
+            return jsonify({"message": "Port status changed successfully"}), 201
+        else:
+            return jsonify({"message": "Port status unchanged"}), 500
+
+    if request.method == 'GET':
+        switch_id = request.args.get('switch_id')
+        if not switch_id:
+            return jsonify({"message": "Missing switch_id"}), 400
+
+        switch = Switch.query.get(switch_id)
+        if not switch:
+            return jsonify({"message": "Switch not found"}), 404
+
+        ports = Port.query.filter_by(switch_id=switch_id).all()
+        if not ports:
+            return jsonify({"message": "Switch has no ports"}), 404
+
+        snmp_manager = SNMPManager(switch.hostname, switch.community_read, switch.community_write, switch.version)
+        ret = snmp_manager.get_port_status()
+
+        return jsonify(ret), 200
+
+    return jsonify({"message": "Method not allowed"}), 405
+
+@app.route('/api/port-status-test', methods=['GET', 'POST'])
+def port_status_test():
+    if request.method == 'POST':
+        data = request.get_json()
+        port_id = data.get('port_id')
+        status_code = data.get('status_code')
+
+        if not all([port_id, status_code]):
+            return jsonify({"message": "Missing data"}), 400
+
+        port = Port.query.get(port_id)
+        if not port:
+            return jsonify({"message": "Port not found"}), 404
+
+        description = "Aluno"
+        port_type = PortType.query.filter_by(description=description).first()
+
+        if not port_type:
+            return jsonify({"message": description + " not added to the port_type table"}), 404
+
+        if port.type_id != port_type.id:
+            return jsonify({"message": "Port not allowed"}), 401
+
+        switch = Switch.query.get(port.switch_id)
+        if not switch:
+            return jsonify({"message": "Switch not found"}), 404
+
+        # snmp_manager = SNMPManager(switch.ip, switch.read_community, switch.write_community, switch.snmp_version)
+        # ret = snmp_manager.change_port_status(port.number, status_code)
+        ret = True
         if ret:
             return jsonify({"message": "Port status changed successfully"}), 201
         else:
